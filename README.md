@@ -1,26 +1,27 @@
 # Setting Up Your First Aptos Agent - Part 2: Building Your AI Blockchain Assistant
 
-Think of an AI blockchain agent like a new employee at a bank. They need two things to do their job: knowledge of banking procedures (that's our AI's instructions) and access to the actual banking systems (that's our blockchain integration). In Part 1, we set up our development environment. Now, we'll create an AI assistant that can actually interact with the Aptos blockchain - giving it both the knowledge and the tools it needs to help users.
+Think of an AI blockchain agent like a new employee at a bank. They need two things to do their job: knowledge of banking procedures (that's our AI's instructions) and access to the actual banking systems (that's our blockchain integration). In Part 1, we set up our Python environment. Now, we'll create an AI assistant that can actually interact with the Aptos blockchain - giving it both the knowledge and the tools it needs to help users.
 
-This tutorial continues from [Part 1](https://github.com/tippi-fifestarr/aptos-agent-local/tree/setup), where we set up our Python environment. You'll learn how to:
-1. Connect your agent to OpenAI's GPT models for intelligent responses
-2. Set up Aptos blockchain interactions
-3. Create a working chat interface that can execute blockchain commands
+This tutorial continues from [Part 1](https://github.com/tippi-fifestarr/aptos-agent-local/tree/setup), where we set up our Python environment and virtual environment.
 
 ## Prerequisites
 - Completed [Part 1 setup](https://github.com/tippi-fifestarr/aptos-agent-local/tree/setup)
 - OpenAI API key (from platform.openai.com)
 - In your activated virtual environment (`source venv/bin/activate`)
-- Python 3.11 configured (check with `python --version`)
+- Python 3.11 configured in venv local (check with `python --version`)
+
+> [!NOTE]  
+> Throughout this guide, we'll provide context for what each piece does and why we need it.
 
 ## 1. Environment Configuration
 
-1. First, ensure you're in your project directory with the virtual environment activated:
+1. Ensure you're in your virtual environment:
 ```bash
-cd aptos-agent
-source venv/bin/activate
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
 ```
-You should see `(aptos-agent)` in your prompt.
+
+> [!NOTE]  
+> You should see `(aptos-agent)` or similar at the start of your prompt
 
 2. Create your `.env` file:
 ```bash
@@ -32,16 +33,45 @@ touch .env
 echo "OPENAI_API_KEY=your-key-here" >> .env
 ```
 
-💡 **Security Note**: Replace `your-key-here` with your actual OpenAI API key. Never commit this file to git!
+> [!IMPORTANT]  
+> Replace `your-key-here` with your actual OpenAI API key. Never commit this file to git!
 
-## 2. Setting Up the Aptos SDK Wrapper
+## 2. Installing Dependencies
 
-4. Create `aptos_sdk_wrapper.py`:
+1. Update pip first:
+```bash
+python -m pip install --upgrade pip
+```
+
+2. Install Swarm and other dependencies:
+```bash
+pip install git+https://github.com/openai/swarm.git openai python-dotenv requests requests-oauthlib aptos-sdk
+```
+
+> [!NOTE]  
+> Let's understand what each package does:
+> - `swarm`: OpenAI's framework for creating AI agents that can use tools and make decisions
+> - `openai`: Connects to OpenAI's API for the language model
+> - `python-dotenv`: Loads environment variables (like your API keys)
+> - `requests` & `requests-oauthlib`: Handles HTTP requests and OAuth authentication
+> - `aptos-sdk`: Interfaces with the Aptos blockchain
+
+3. Save the dependencies list:
+```bash
+pip freeze > requirements.txt
+```
+
+> [!NOTE]  
+> Think of `requirements.txt` like `package-lock.json` in Node.js - it locks your dependency versions
+
+## 3. Setting Up the Aptos SDK Wrapper
+
+1. Create the SDK wrapper file:
 ```bash
 touch aptos_sdk_wrapper.py
 ```
 
-5. Add the complete Aptos SDK integration code:
+2. Add the Aptos integration code to `aptos_sdk_wrapper.py`:
 ```python
 import os
 from aptos_sdk.account import Account, AccountAddress
@@ -49,7 +79,7 @@ from aptos_sdk.async_client import FaucetClient, RestClient
 from aptos_sdk.transactions import EntryFunction, TransactionArgument, TransactionPayload
 from aptos_sdk.bcs import Serializer
 
-# Initialize clients
+# Initialize clients for testnet
 rest_client = RestClient("https://api.testnet.aptoslabs.com/v1")
 faucet_client = FaucetClient("https://faucet.testnet.aptoslabs.com",
                              rest_client)
@@ -109,20 +139,17 @@ async def create_token(sender: Account, name: str, symbol: str, icon_uri: str,
     return txn_hash
 ```
 
-💡 **What's Happening Here**: This file acts like a translation layer between our AI agent and the Aptos blockchain. Each function handles a specific blockchain operation:
-- `fund_wallet`: Gets test tokens from the faucet
-- `get_balance`: Checks wallet balance
-- `transfer`: Sends tokens between accounts
-- `create_token`: Creates new tokens on Aptos
+> [!NOTE]  
+> This file acts as a bridge between our AI agent and the Aptos blockchain, handling all blockchain interactions.
 
-## 3. Creating the Agent
+## 4. Creating the Agent
 
-6. Create `agents.py`:
+1. Create the agents file:
 ```bash
 touch agents.py
 ```
 
-7. Add the complete agent configuration:
+2. Add the agent configuration to `agents.py`:
 ```python
 import os
 import json
@@ -197,20 +224,14 @@ aptos_agent = Agent(
 )
 ```
 
-💡 **What's Happening Here**: This file:
-1. Sets up our AI agent with OpenAI
-2. Gives it instructions about Aptos
-3. Connects it to blockchain functions
-4. Handles asynchronous operations
+## 5. Creating the Main Entry Point
 
-## 4. Creating the Main Entry Point
-
-8. Create `main.py`:
+1. Create the main file:
 ```bash
 touch main.py
 ```
 
-9. Add the main program code:
+2. Add the program entry code to `main.py`:
 ```python
 from dotenv import load_dotenv
 from swarm.repl import run_demo_loop
@@ -225,11 +246,9 @@ if __name__ == "__main__":
         close_event_loop()
 ```
 
-💡 **What's Happening Here**: This creates an interactive chat interface where users can talk to your AI agent.
+## 6. Testing Your Agent
 
-## 5. Testing Your Agent
-
-10. Start your agent:
+1. Start your agent:
 ```bash
 python main.py
 ```
@@ -240,42 +259,68 @@ Starting Swarm CLI 🐝
 User: 
 ```
 
-11. Try these test commands:
+2. Have a conversation with it to test the capabilities.
+Here's a real example conversation showing token creation:
+
 ```
-What can you help me with?
-Check my wallet balance
-What is Aptos?
+User: hooty dooty is my catchphrase
+
+Aptos Agent: That's a fun and unique catchphrase! Do you have any specific applications or ideas in mind related to this catchphrase, like creating custom digital assets or using it in some creative way on the Aptos blockchain? Let me know how I can help!
+
+User: sure! you can take the lead
+
+Aptos Agent: Great! Let's create a custom token on the Aptos blockchain with your catchphrase "Hooty Dooty" as its theme. Here's a plan:
+1. **Token Name**: Hooty Dooty
+2. **Token Symbol**: HOOTY
+3. **Icon URI**: (We can use a placeholder for now unless you have a specific icon)
+4. **Project URI**: (We can use a placeholder or a specific link if you have one in mind)
+I'll proceed to create this token for you. Please let me know if you'd like to change any details (such as the symbol or URIs), or if you have specific information you want to include.
+
+User: go ahead
+
+Aptos Agent: create_token_sync()
+Creating FA with name: Hooty Dooty, symbol: HOOTY, icon_uri: https://example.com/icon.png, project_uri: https://example.com
+Transaction hash: 0xe6f1eb6e58c61aba42eca9c0a50b908d7a7f693be46b8b748793147e9af6dce1
 ```
 
-💡 **Control Tips**:
-- To exit the chat: Press `Ctrl+Z` (Mac/Linux) or `Ctrl+C` (Windows)
-- The agent will keep running until you explicitly exit
-- Don't worry if you need to press the key combination a couple times
+## 7. Verifying Your Token (or whatever you do)
 
-💡 **Successful Setup Signs**:
-- You see the Swarm CLI start message
-- The agent responds intelligently about Aptos
-- You can check wallet balance
-- No OpenAI API key errors
+After creating a token, you can verify it on the Aptos Explorer:
 
-⚠️ **Common Issues**:
-- If you see OpenAI API errors, check your `.env` file
-- If you see Python version errors, verify you're using 3.11+
-- The AIP-80 compliance warning is normal for test environments
+1. Visit the [Aptos Explorer](https://explorer.aptoslabs.com/?network=testnet)
+2. Switch to "Testnet" network if not already selected
+3. Paste your transaction hash
+   
+![Screenshot 2025-01-02 at 7 29 16 PM](https://github.com/user-attachments/assets/2c5d77a9-b558-4545-a1e4-93ce5bf642c7)
+
+4. Click the "Payload" tab to see your token details
+
+> [!NOTE]  
+> Example verification URL for the Hooty Dooty token:
+> [https://explorer.aptoslabs.com/txn/0xe6f1eb6e58c61aba42eca9c0a50b908d7a7f693be46b8b748793147e9af6dce1/payload?network=testnet](https://explorer.aptoslabs.com/txn/0xe6f1eb6e58c61aba42eca9c0a50b908d7a7f693be46b8b748793147e9af6dce1/payload?network=testnet)
+
+You should see your token's payload details, confirming it was created successfully on the Aptos blockchain.
+
+> [!NOTE]  
+> **Control Tips**:
+> - To exit: Press `Ctrl+Z` (Mac/Linux) or `Ctrl+C` (Windows)
+> - You might need to press the key combination multiple times
+> - The agent keeps running until explicitly exited
 
 ## What's Next?
 
-Congratulations! You now have a working AI agent that can:
+Your AI agent can now:
 - Understand and respond to blockchain questions
 - Execute Aptos transactions
 - Help users interact with the blockchain
+- Create and verify tokens on testnet
 
-In Part 3, we'll:
-- Add more blockchain capabilities
-- Implement social media features
-- Create custom commands
+In Part 3, we'll improve the agent with:
+- A setup wizard for configuration
+- Optional social media features
+- Better test mode capabilities
 
-Remember to deactivate your virtual environment when you're done:
+Remember to deactivate your virtual environment when done:
 ```bash
 deactivate
 ```
